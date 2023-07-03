@@ -9,6 +9,7 @@ import sys
 from PyQt5 import QtCore, QtWidgets, uic, QtSerialPort
 from PyQt5.QtCore import QRunnable, pyqtSlot
 from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QFileDialog
 
 from MainWindow import Ui_MainWindow
 
@@ -29,6 +30,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.comConnect3.clicked.connect(lambda: self.connectToSerial(3))
         self.bt_refreshInternet.clicked.connect(self.updateInternetStatus)
         self.bt_refreshComs.clicked.connect(self.populateComPorts)
+        
+        #Tab Terminal Buttons
+        self.tab1_export.clicked.connect(lambda: self.exportTerminal(1))
+        self.tab2_export.clicked.connect(lambda: self.exportTerminal(2))
+        self.tab3_export.clicked.connect(lambda: self.exportTerminal(3))
         
         self.bt_disconnectSerialPorts.clicked.connect(self.disconnectAllSerialPorts)
         self.errorFormat = '<span style="color:red;">{}</span>'
@@ -160,6 +166,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.internetStatus.setText("Internet Disconnected")
             self.internetStatus.setStyleSheet("color: red; font-weight: bold;")
             self.sendMessageToDebug("No internet connection present", "WARN")
+            
+    def exportTerminal(self, buttonNumber):
+        terminalOutputs = [self.terminalOutput, self.terminalOutput2, self.terminalOutput3]
+        terminal = terminalOutputs[buttonNumber-1]
+        data = terminal.toPlainText().split("\n")
+        filename = self.saveFileDialog()
+        try:
+            with open(filename, "w") as file:
+                file.write(terminal.toPlainText())
+        except:
+            self.sendMessageToDebug("Failed to open file, export failed", "ERR")
+        
+    def saveFileDialog(self):
+        options = QFileDialog.Options()
+        #options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","Text Files (*.txt);;All Files (*)", options=options)
+        if fileName:
+            return fileName
             
 # Checks Internet Connection
 def internetConnectionPresent(url="www.google.com", timeout=3):
