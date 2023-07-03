@@ -28,6 +28,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.comConnect2.clicked.connect(lambda: self.connectToSerial(2))
         self.comConnect3.clicked.connect(lambda: self.connectToSerial(3))
         self.bt_refreshInternet.clicked.connect(self.updateInternetStatus)
+        self.bt_refreshComs.clicked.connect(self.populateComPorts)
+        
         self.bt_disconnectSerialPorts.clicked.connect(self.disconnectAllSerialPorts)
         self.errorFormat = '<span style="color:red;">{}</span>'
         self.warningFormat = '<span style="color:orange;">{}</span>'
@@ -41,14 +43,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.tabs = [self.tab, self.tab2, self.tab3]
         
-        self._populateDropdowns()
+        self.populateComPorts()
         
         self.updateInternetStatus()
             
     
-    def _populateDropdowns(self):
+    def populateComPorts(self):
         ports = serial.tools.list_ports.comports()
-
+        self.comSelection1.clear()
+        self.comSelection2.clear()
+        self.comSelection3.clear()
+        
         for port, desc, hwid in sorted(ports):
                 if len(desc) > 20:
                     desc = f"{desc[:20]}..."
@@ -113,11 +118,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 comButton[buttonNumber-1].setChecked(False)
                 comButton[buttonNumber-1].setText("Connect")
         else:
+            color = QColor("red")
             self.sendMessageToDebug(f"{comPort} disconnected", 'WARN')
             comButton[buttonNumber-1].setText("Connect")
             comStatus[buttonNumber-1].setText("Status: Disconnected")
             comStatus[buttonNumber-1].setStyleSheet("color: black; font-weight: bold;")
             self.tabWidget.setTabText(buttonNumber-1, "NOCOM")
+            self.tabWidget.tabBar().setTabTextColor(buttonNumber-1, color)
             selectedChannel.close()
     
     @pyqtSlot()
@@ -145,25 +152,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.disconnectAllSerialPorts()
         
     def updateInternetStatus(self):
-        if(internetConnectionPresent):
+        if(internetConnectionPresent()):
             self.internetStatus.setText("Internet Connected")
-            self.internetStatus.setStyleSheet("color: green")
+            self.internetStatus.setStyleSheet("color: green; font-weight: bold;")
             self.sendMessageToDebug("Internet connection present", "INFO")
         else:
             self.internetStatus.setText("Internet Disconnected")
-            self.internetStatus.setStyleSheet("color: red")
+            self.internetStatus.setStyleSheet("color: red; font-weight: bold;")
             self.sendMessageToDebug("No internet connection present", "WARN")
             
 # Checks Internet Connection
 def internetConnectionPresent(url="www.google.com", timeout=3):
     connection = httplib.HTTPConnection(url, timeout=timeout)
     try:
-        print("Connection not present")
         connection.request("HEAD", "/")
         connection.close()
         return True
     except:
-        print("Connection present")
         return False
 
 if __name__ == "__main__":
